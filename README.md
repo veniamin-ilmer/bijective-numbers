@@ -18,7 +18,7 @@ Instead, it converts all numbers into a binary bijective numeration. This biject
 
 Addition, or any other simple math operation, involves simply a match of bits. This simulates how the CPU adds numbers on the chip level, except here it's using a bijective number array.
 
-In the future, this project will continue to use a Bit/Bool Vector to save all numbers. It will never try to optimize the functionality by using the processor's math opcodes instead.
+This project will continue to use a Bit/Bool Vector to save all numbers. It will never try to optimize the functionality by using the processor's math opcodes instead.
 
 I will otherwise add more mathematical functionality to the crate over time.
 
