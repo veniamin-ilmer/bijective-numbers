@@ -14,14 +14,13 @@ pub fn main() {
   println!("{} + {} = {}", u64::from(num1), u64::from(num2), u64::from(num3));
   */
 
-  let mut num1 = Bij::from(1_u64);
+  let mut num1 = Bij::from(0_u64);
   
   //Regular add = 1.2 seconds
-//  for _ in 0..50000000 {   //16 secs
-//    let num2 = Bij::from(rng.gen_range(1, 10));
-    let num2 = Bij::from(3_u64);
-    num1 = num1 + &num2;
-//  }
+  for _ in 0..20000000 {   //16 secs
+    let num2 = Bij::from(rng.gen_range(1, 10));
+    num1 = num1 + num2;
+  }
   let temp = u64::from(num1);
   println!("{}", temp);
 
@@ -114,21 +113,21 @@ impl<'a> Add<&'a Bij> for Bij {
   type Output = Bij;
   fn add(self, other: &'a Bij) -> Bij {
     
-    let bigger;
-    let smaller;
-    if self.mem.len() >= other.mem.len() {
-      bigger = &self;
-      smaller = other;
+    let mut out = self;
+    
+    let bigger_len;
+    let smaller_len;
+    if out.mem.len() >= other.mem.len() {
+      bigger_len = out.mem.len();
+      smaller_len = other.mem.len();
     } else {
-      bigger = other;
-      smaller = &self;
+      bigger_len = other.mem.len();
+      smaller_len = out.mem.len();
     }
     
-    let mut out = self;
-    println!("{:?} {:?}", out.mem, other.mem);
     let mut carry = 0u8;
-    for i in 0..smaller.mem.len() {
-      match (bigger.mem[i], smaller.mem[i], carry) {
+    for i in 0..smaller_len {
+      match (out.mem[i], other.mem[i], carry) {
         (false, false, 0) => out.mem[i] = true, //, carry = 0;     1+1+0= 2
         (false, false, 1) => {}, //out[i] = false, carry = 1   1+1+1=11
         (false, false, 2) => {out.mem[i] = true; carry = 1;},    //1+1+2=12
@@ -145,18 +144,35 @@ impl<'a> Add<&'a Bij> for Bij {
       }
     }
   
-    for i in smaller.mem.len()..bigger.mem.len() {
-      if carry == 0 {
-        break;
+    //The output is longer than the other vec, so we should only continue adding till there's no carry.
+    if out.mem.len() >= other.mem.len() {
+      for i in smaller_len..bigger_len {
+        if carry == 0 {
+          break;
+        }
+        match (out.mem[i], carry) {
+          (false, 1) => {out.mem[i] = true; carry = 0;},  //1+1=2
+          (false, 2) => {out.mem[i] = false; carry = 1;}, //1+2=11
+          (true, 1) => out.mem[i] = false, //carry = 1      2+1=11
+          (true, 2) => {out.mem[i] = true; carry = 1;},   //2+2=12
+          _ => panic!("Unknown add combination {} {}", out.mem[i], carry),
+        }
       }
-      match (bigger.mem[i], carry) {
-        (false, 1) => {out.mem[i] = true; carry = 0;},  //1+1=2
-        (false, 2) => {out.mem[i] = false; carry = 1;}, //1+2=11
-        (true, 1) => out.mem[i] = false, //carry = 1      2+1=11
-        (true, 2) => {out.mem[i] = true; carry = 1;},   //2+2=12
-        _ => panic!("Unknown add combination {} {}", bigger.mem[i], carry),
+    //The other vec is longer than the output, so we must run through the whole vec.
+    } else {
+      for i in smaller_len..bigger_len {
+        match (other.mem[i], carry) {
+          (false, 0) => out.mem.push(false), //carry = 0;    1+0=1
+          (false, 1) => {out.mem.push(true); carry = 0;},  //1+1=2
+          (false, 2) => {out.mem.push(false); carry = 1;}, //1+2=11
+          (true, 0) => out.mem.push(true), //carry = 0       2+0=2
+          (true, 1) => out.mem.push(false), //carry = 1      2+1=11
+          (true, 2) => {out.mem.push(true); carry = 1;},   //2+2=12
+          _ => panic!("Unknown add combination {} {}", other.mem[i], carry),
+        }
       }
     }
+    
     //Ran out of numbers, and there is still a carry
     if carry == 1 {
       out.mem.push(false);
