@@ -6,8 +6,6 @@ Used for reference, why certain decisions were made in code.
 
 ## Experiment 1
 
-### Question
-
 When running `a + &b`, but `b` memory array length is bigger than `a`, what is faster?
 
 1. Reuse the memory from `a`, and add `b`.
@@ -50,3 +48,30 @@ Compare:
 We should only reuse the memory if the reusable variable is bigger.
 
 If the only reusable variable is smaller, clone the bigger variable instead.
+
+## Experiment 2
+
+Is a `macro` faster than an `#[inline]` function?
+
+### Test
+
+Compare:
+
+* macro `add!` `($bigger:expr, $smaller:expr)`
+* inline function `_add(bigger: &mut Bij, smaller: &Bij)`
+
+### Results
+
+20000000 runs in playground stable (Rust 1.30).
+
+I lost the original data but it was something like this:
+
+Inline function took an average of 2.65 seconds.
+
+Macro took an average of 2.55 seconds.
+
+### Conclusion
+
+Use macros instead of inline functions.
+
+I use this especially when there are multiple functions that do the same thing. (Multiple different ways to add.. a += &b vs c = a + b.)
