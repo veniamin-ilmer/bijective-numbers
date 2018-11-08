@@ -74,4 +74,6 @@ Macro took an average of 2.55 seconds.
 
 Use macros instead of inline functions.
 
-I use this especially when there are multiple functions that do the same thing. (Multiple different ways to add.. a += &b vs c = a + b.)
+I use this especially when there are multiple functions that do the same thing.
+
+(Multiple different ways to add.. a += &b vs c = a + b.)
