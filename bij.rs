@@ -17,7 +17,7 @@ pub fn main() {
   
   for _ in 0..20000000 {
     let num2 = Bij::from(rng.gen_range(1, 10));
-    num1 = num1 + num2;
+    num1 = &num1 + num2;
   }
 
   let temp = u64::from(num1);
@@ -44,43 +44,43 @@ impl Bij {
 //We should only reuse the memory if the reusable variable is bigger.
 //If the only reusable variable is smaller, clone the bigger variable instead.
 macro_rules! add {
-  //Overrights $bigger. Read only $smaller
+  //Overwrites $bigger. Read only $smaller
   ($bigger:expr, $smaller:expr) => (
-    let mut carry = 0u8;
+    let mut carry = None;
     for i in 0..$smaller.mem.len() {
       match ($bigger.mem[i], $smaller.mem[i], carry) {
-        (false, false, 0) => $bigger.mem[i] = true, //, carry = 0;   1+1+0= 2
-        (false, false, 1) => {}, //bigger[i] = false, carry = 1     1+1+1=11
-        (false, false, 2) => {$bigger.mem[i] = true; carry = 1;},  //1+1+2=12
-        (true, false, 0) => {$bigger.mem[i] = false; carry = 1;},  //2+1+0=11
-        (true, false, 1) => {}, //bigger[i] = true, carry = 1       2+1+1=12
-        (true, false, 2) => $bigger.mem[i] = false, //carry = 2      2+1+2=21
-        (false, true, 0) => carry = 1,    //bigger[i] = false       1+2+0=11
-        (false, true, 1) => $bigger.mem[i] = true, //carry = 1       1+2+1=12
-        (false, true, 2) => {}, //num[i] = false, carry = 2         1+2+2=21
-        (true, true, 0) => carry = 1, // bigger[i] = true           2+2+0=12
-        (true, true, 1) => {$bigger.mem[i] = false; carry = 2;},   //2+2+1=21
-        (true, true, 2) => {}, //bigger[i] = true; carry = 2        2+2+2=22
-        _ => panic!("Unknown add combination {} {} {}", $bigger.mem[i], $smaller.mem[i], carry),
+        (false, false, None) => $bigger.mem[i] = true, //, carry = None;                 1+1+0= 2
+        (false, false, Some(false)) => {}, //$bigger[i] = false, carry = Some(false)     1+1+1=11
+        (false, false, Some(true)) => {$bigger.mem[i] = true; carry = Some(false);},   //1+1+2=12
+        (true, false, None) => {$bigger.mem[i] = false; carry = Some(false);},         //2+1+0=11
+        (true, false, Some(false)) => {}, //$bigger[i] = true, carry = Some(false)       2+1+1=12
+        (true, false, Some(true)) => $bigger.mem[i] = false, //carry = Some(true)        2+1+2=21
+        (false, true, None) => carry = Some(false),    //bigger[i] = false               1+2+0=11
+        (false, true, Some(false)) => $bigger.mem[i] = true, //carry = Some(false)       1+2+1=12
+        (false, true, Some(true)) => {}, //num[i] = false, carry = Some(true)            1+2+2=21
+        (true, true, None) => carry = Some(false), // bigger[i] = true                   2+2+0=12
+        (true, true, Some(false)) => {$bigger.mem[i] = false; carry = Some(true);},    //2+2+1=21
+        (true, true, Some(true)) => {}, //bigger[i] = true; carry = Some(true)           2+2+2=22
       }
     }
-  
-    for i in $smaller.mem.len()..$bigger.mem.len() {
-      if carry == 0 {
-        break;
+    
+    if carry.is_some() && $smaller.mem.len() < $bigger.mem.len() {  //$smaller.mem.len() < $bigger.mem.len() must be there, because we are assuming this below.
+      let mut i_start = $smaller.mem.len();
+      if carry == Some(true) {  //bigger.mem[i] == false && carry=Some(true) => bigger.mem[i] = false; carry = Some(false);
+        carry = Some(false);    //bigger.mem[i] == false && carry=Some(true) => bigger.mem[i] = true; carry = Some(false);
+        i_start += 1;
       }
-      match ($bigger.mem[i], carry) {
-        (false, 1) => {$bigger.mem[i] = true; carry = 0;},  //1+1=2
-        (false, 2) => {$bigger.mem[i] = false; carry = 1;}, //1+2=11
-        (true, 1) => $bigger.mem[i] = false, //carry = 1      2+1=11
-        (true, 2) => {$bigger.mem[i] = true; carry = 1;},   //2+2=12
-        _ => panic!("Unknown add combination {} {}", $bigger.mem[i], carry),
+      for i in i_start..$bigger.mem.len() {   //Carry is assumed to be 1 this whole time, unless break.
+        match $bigger.mem[i] {
+          false => {$bigger.mem[i] = true; carry = None; break;},     //1+1=2    No carry, so break
+          true => $bigger.mem[i] = false,                              //2+1=11
+        }
       }
     }
-
-    //Ran out of numbers, and there is still a carry
-    if carry == 1 {
-      $bigger.mem.push(false);
+    
+    //Ran out of numbers. At the end, still have a carry
+    if carry.is_some() {
+      $bigger.mem.push(carry.unwrap());
     }
   );
 }
@@ -112,11 +112,18 @@ impl From<Bij> for u64 {
     let mut out = 0;
     let mut multiplier = 1;
     for i in 0..bij.mem.len() {
+    /*
       let num = match bij.mem[i] {
         true => 2,
         false => 1,
       };
       out += num * multiplier;
+      multiplier *= 2;
+      */
+      out += multiplier;
+      if bij.mem[i] {
+        out += multiplier;
+      }
       multiplier *= 2;
     }
     out
