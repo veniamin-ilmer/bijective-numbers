@@ -1,25 +1,27 @@
-extern crate rand; // 0.5.5
-use rand::Rng;
+//extern crate rand; // 0.5.5
+//use rand::Rng;
 
 use std::time::Instant;
 
 pub fn main() {
   let start = Instant::now();
   
-  let mut rng = rand::thread_rng();
+  //let mut rng = rand::thread_rng();
 /*
   let mut num1 = Bij::from(1_u64);
   let num2 = Bij::from(1_u64);
   let num3 = &num1 + &num2 + &num2;
   println!("{} + {} = {}", u64::from(num1), u64::from(num2), u64::from(num3));
 */
-  let mut num1 = Bij::from(500000000);
+  let mut num1 = Bij::from(5);
+  let num2 = Bij::from(1);
 
-  
+  /*
   for _ in 0..20000000 {
     let num2 = Bij::from(rng.gen_range(1, 10));
     num1 -= &num2;
-  }
+  }*/
+  num1 = num1 - num2;
 
   let temp = u64::from(num1);
   println!("{}", temp);
@@ -242,7 +244,7 @@ macro_rules! sub {
       }
     }
     
-    if carry.is_some() && $smaller.mem.len() + 1 < $bigger.mem.len() {  //The + 1 is necessary so that the second pop was accessable below.
+    if carry.is_some() && $smaller.mem.len() + 1 < $bigger.mem.len() {  //$smaller.mem.len() < $bigger.mem.len() must be there, because we are assuming this below.
       let mut i_start = $smaller.mem.len();
       if carry == Some(true) {  //bigger.mem[i] == false && carry=Some(true) => bigger.mem[i] = false; carry = Some(false);  1111-21=122
         carry = Some(false);    //bigger.mem[i] == true && carry=Some(true) => bigger.mem[i] = true; carry = Some(false);  1211-21=222
@@ -357,6 +359,59 @@ impl SubAssign for Bij {
     } else {
       sub!(other, self);
       *self = other;
+    }
+  }
+}
+
+
+
+
+macro_rules! mul {
+  //Overwrites $answer and $smaller. Returns in $answer
+  ($answer:expr, $smaller:expr) => (
+    let one = Bij::from(1);
+    let mut bigger = $answer.clone();
+    
+    //First time run, small first time optimization
+    {
+      if $smaller.mem[0] {  //even
+        $answer = Bij::new(); //Reset to 0
+        $smaller.mem.pop_front();    //$smaller = floor((smaller - 1) / 2);
+        $smaller += &one;  //Because of the popping doing a floor, even numbers need to be adjusted upwards.
+      } else {  //odd
+        //Don't do anything with $answer here! It's already loaded in memory!
+        $smaller.mem.pop_front();    //$smaller = floor((smaller - 1) / 2);
+      }
+      bigger.mem.push_front(false);    //$bigger = $bigger * 2 + 1;
+      println!("{}", u64::from(bigger.clone()));
+      bigger -= &one;
+    }
+    
+    while $smaller.mem.len() != 0 {  //while $smaller != 0
+      if $smaller.mem[0] {  //even
+        $smaller.mem.pop_front();    //$smaller = floor((smaller - 1) / 2);
+        $smaller += &one;  //Because of the popping doing a floor, even numbers need to be adjusted upwards.
+      } else {  //odd
+        $smaller.mem.pop_front();    //$smaller = floor((smaller - 1) / 2);
+        $answer += &bigger;
+      }
+      bigger.mem.push_front(false);    //$bigger = $bigger * 2 + 1;
+      bigger -= &one;
+    }
+  );
+}
+
+use std::ops::Mul;
+
+impl Mul<Bij> for Bij {
+  type Output = Bij;
+  fn mul(mut self, mut other: Bij) -> Bij {
+    if self.mem.len() >= other.mem.len() {
+      mul!(self, other);
+      self
+    } else {
+      mul!(other, self);
+      other
     }
   }
 }
