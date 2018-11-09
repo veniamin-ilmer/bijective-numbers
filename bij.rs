@@ -13,15 +13,15 @@ pub fn main() {
   let num3 = &num1 + &num2 + &num2;
   println!("{} + {} = {}", u64::from(num1), u64::from(num2), u64::from(num3));
 */
-  let mut num1 = Bij::from(5);
-  let num2 = Bij::from(1);
+  let mut num1 = Bij::from(123456789);
+  let num2 = Bij::from(987654321);
 
   /*
   for _ in 0..20000000 {
     let num2 = Bij::from(rng.gen_range(1, 10));
     num1 -= &num2;
   }*/
-  num1 = num1 - num2;
+  num1 = num1 * num2;
 
   let temp = u64::from(num1);
   println!("{}", temp);
@@ -244,7 +244,10 @@ macro_rules! sub {
       }
     }
     
-    if carry.is_some() && $smaller.mem.len() + 1 < $bigger.mem.len() {  //$smaller.mem.len() < $bigger.mem.len() must be there, because we are assuming this below.
+    if carry.is_some() && (
+         ($smaller.mem.len() < $bigger.mem.len() && carry == Some(false)) ||
+         ($smaller.mem.len() + 1 < $bigger.mem.len() && carry == Some(true))
+      ) {
       let mut i_start = $smaller.mem.len();
       if carry == Some(true) {  //bigger.mem[i] == false && carry=Some(true) => bigger.mem[i] = false; carry = Some(false);  1111-21=122
         carry = Some(false);    //bigger.mem[i] == true && carry=Some(true) => bigger.mem[i] = true; carry = Some(false);  1211-21=222
@@ -383,7 +386,6 @@ macro_rules! mul {
         $smaller.mem.pop_front();    //$smaller = floor((smaller - 1) / 2);
       }
       bigger.mem.push_front(false);    //$bigger = $bigger * 2 + 1;
-      println!("{}", u64::from(bigger.clone()));
       bigger -= &one;
     }
     
