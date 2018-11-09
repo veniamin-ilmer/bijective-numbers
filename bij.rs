@@ -376,6 +376,9 @@ macro_rules! mul {
     let mut bigger = $answer.clone();
     
     //First time run, small first time optimization
+    //Before, it was just this:
+    //$answer = Bij::new(); //Reset to 0
+    //Now below, we can preserve the first number instead of setting it to 0 from the beginning.
     {
       if $smaller.mem[0] {  //even
         $answer = Bij::new(); //Reset to 0
